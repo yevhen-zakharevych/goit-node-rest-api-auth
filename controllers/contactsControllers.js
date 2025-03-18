@@ -1,24 +1,26 @@
 import {
   listContacts,
-  getContactById,
+  getContact,
   removeContact,
   addContact,
   putContact,
   updateFavoriteContact,
-} from "../services/contactsServices.js";
+} from "../services/contactsService.js";
 
 import HttpError from "../helpers/HttpError.js";
 
-export const getAllContacts = async (_req, res) => {
-  const contacts = await listContacts();
+export const getAllContacts = async (req, res) => {
+  const { id: owner } = req.user;
+  const contacts = await listContacts({ owner });
 
   res.json({ status: "success", code: 200, data: { contacts } });
 };
 
 export const getOneContact = async (req, res) => {
   const { id } = req.params;
+  const { id: owner } = req.user;
 
-  const contact = await getContactById(id);
+  const contact = await getContact({ id, owner });
 
   if (!contact) {
     throw HttpError(404, "Not found");
@@ -29,7 +31,8 @@ export const getOneContact = async (req, res) => {
 
 export const deleteContact = async (req, res) => {
   const { id } = req.params;
-  const contact = await getContactById(id);
+  const { id: owner } = req.user;
+  const contact = await getContact({ id, owner });
 
   if (contact) {
     await removeContact(id);
@@ -41,8 +44,8 @@ export const deleteContact = async (req, res) => {
 };
 
 export const createContact = async (req, res) => {
-  const { name, email, phone, favorite } = req.body;
-  const contact = await addContact(name, email, phone, favorite);
+  const { id: owner } = req.user;
+  const contact = await addContact({ ...req.body, owner });
 
   res.status(201).json({
     status: "success",
@@ -59,7 +62,8 @@ export const updateContact = async (req, res) => {
   }
 
   const { id } = req.params;
-  const contact = await putContact(id, name, email, phone);
+  const { id: owner } = req.user;
+  const contact = await putContact({ id, owner }, req.body);
 
   if (contact) {
     res.json({ status: "success", code: 200, data: { contact } });
@@ -71,7 +75,8 @@ export const updateContact = async (req, res) => {
 export const updateStatusContact = async (req, res) => {
   const { favorite } = req.body;
   const { id } = req.params;
-  const contact = await updateFavoriteContact(id, favorite);
+  const { id: owner } = req.user;
+  const contact = await updateFavoriteContact({ id, owner }, favorite);
 
   if (contact) {
     res.json({ status: "success", code: 200, data: { contact } });
